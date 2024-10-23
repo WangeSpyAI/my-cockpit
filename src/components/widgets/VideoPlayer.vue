@@ -42,9 +42,59 @@
     <div v-else class="no-video-alert">
       <p>Loading stream...</p>
     </div>
-    <video id="mainDisplayStream" ref="videoElement" muted autoplay playsinline disablePictureInPicture>
+    <video id="mainDisplayStream" ref="videoElement" muted autoplay playsinline disablePictureInPicture :style="{ filter: combinedFilters }" >
       Your browser does not support the video tag.
     </video>
+    <div style="display: flex;">
+      <div class="relative items-center justify-center w-auto p-1 rounded-md shadow-inner h-auto bg-slate-800/60">
+        <p>Invert</p>
+        <v-text-field
+            v-model.number="invertRate"
+            variant="filled"
+            placeholder="auto"
+            type="number"
+            class="uri-input"
+            theme="dark"
+            density="compact"
+            max="100"
+            min="0"
+            @input="invertRate"
+          />
+          <ToggleButton :isFilterOn="isInvertFilterOn" @toggle-filter="toggleInvertFilter" />
+      </div>
+      <div class="relative items-center justify-center w-auto p-1 rounded-md shadow-inner h-auto bg-slate-800/60">
+        <p>Saturate</p>
+        <v-text-field
+            v-model.number="saturateRate"
+            variant="filled"
+            placeholder="auto"
+            type="number"
+            class="uri-input"
+            theme="dark"
+            density="compact"
+            max="200"
+            min="0"
+            @input="saturateRate"
+          />
+          <ToggleButton :isFilterOn="isSaturateFilterOn" @toggle-filter="toggleSaturateFilter" />
+      </div>
+      <div class="relative items-center justify-center w-auto p-1 rounded-md shadow-inner h-auto bg-slate-800/60">
+        <p>Brightness</p>
+        <v-text-field
+            v-model.number="brightnessRate"
+            variant="filled"
+            placeholder="auto"
+            type="number"
+            class="uri-input"
+            theme="dark"
+            density="compact"
+            max="200"
+            min="0"
+            @input="brightnessRate"
+          />
+          <ToggleButton :isFilterOn="isBrightnessFilterOn" @toggle-filter="toggleBrightnessFilter" />
+      </div>
+    </div>
   </div>
   <v-dialog v-model="widgetStore.widgetManagerVars(widget.hash).configMenuOpen" width="auto">
     <v-card class="pa-4 text-white" style="border-radius: 15px" :style="interfaceStore.globalGlassMenuStyles">
@@ -109,6 +159,42 @@
 import { storeToRefs } from 'pinia'
 import { computed, onBeforeMount, onBeforeUnmount, ref, toRefs, watch } from 'vue'
 
+import ToggleButton from '../mini-widgets/ToggleFilter.vue';
+// フィルタ状態を管理
+const isInvertFilterOn = ref(true);
+const invertRate = ref(100);
+const isSaturateFilterOn = ref(false);
+const saturateRate = ref(100);
+const isBrightnessFilterOn = ref(false);
+const brightnessRate = ref(100);
+
+
+// フィルタのオン・オフを切り替える関数
+const toggleInvertFilter = () => {
+  isInvertFilterOn.value = !isInvertFilterOn.value;
+};
+const toggleSaturateFilter = () => {
+  isSaturateFilterOn.value = !isSaturateFilterOn.value;
+};
+const toggleBrightnessFilter = () => {
+  isBrightnessFilterOn.value = !isBrightnessFilterOn.value;
+};
+const combinedFilters = computed(() => {
+  let filters = [];
+
+  if (isInvertFilterOn.value) {
+    filters.push(`invert(${invertRate.value / 100})`);
+  }
+  if (isSaturateFilterOn.value) {
+    filters.push(`grayscale(${saturateRate.value / 100})`);
+  }
+  if (isBrightnessFilterOn.value) {
+    filters.push(`sepia(${brightnessRate.value / 100})`);
+  }
+
+  return filters.length ? filters.join(' ') : 'none'; // フィルタをスペースで区切って適用
+});
+
 import StatsForNerds from '@/components/VideoPlayerStatsForNerds.vue'
 import { isEqual } from '@/libs/utils'
 import { useAppInterfaceStore } from '@/stores/appInterface'
@@ -126,7 +212,8 @@ const props = defineProps<{
   /**
    * Widget reference
    */
-  widget: Widget
+  widget: Widget,
+  isFilterOn: boolean
 }>()
 
 const widget = toRefs(props).widget
