@@ -45,7 +45,7 @@
     <video id="mainDisplayStream" ref="videoElement" muted autoplay playsinline disablePictureInPicture :style="{ filter: combinedFilters }" >
       Your browser does not support the video tag.
     </video>
-    <div style="display: flex;">
+    <!-- <div style="display: flex;" class="relative flex items-center justify-end">
       <div class="relative items-center justify-center w-auto p-1 rounded-md shadow-inner h-auto bg-slate-800/60">
         <p>Invert</p>
         <v-text-field
@@ -60,7 +60,9 @@
             min="0"
             @input="invertRate"
           />
+          <p>{{ buttonState }}</p>
           <ToggleButton :isFilterOn="isInvertFilterOn" @toggle-filter="toggleInvertFilter" />
+          <ChildButton />
       </div>
       <div class="relative items-center justify-center w-auto p-1 rounded-md shadow-inner h-auto bg-slate-800/60">
         <p>Saturate</p>
@@ -94,7 +96,7 @@
           />
           <ToggleButton :isFilterOn="isBrightnessFilterOn" @toggle-filter="toggleBrightnessFilter" />
       </div>
-    </div>
+    </div> -->
   </div>
   <v-dialog v-model="widgetStore.widgetManagerVars(widget.hash).configMenuOpen" width="auto">
     <v-card class="pa-4 text-white" style="border-radius: 15px" :style="interfaceStore.globalGlassMenuStyles">
@@ -146,6 +148,21 @@
           :color="widget.options.statsForNerds ? 'white' : undefined"
           hide-details
         />
+        <v-switch
+          v-model="isInvertFilterOn"
+          class="my-1"
+          label="Invert"
+          :color="isInvertFilterOn ? 'white' : undefined"
+          hide-details
+        />
+        <v-slider
+          v-model="invertRate"
+          label="Invert Rate"
+          color="white"
+          :min="0"
+          :max="100"
+          thumb-label
+        />
         <div class="flex-wrap justify-center d-flex ga-5">
           <v-btn prepend-icon="mdi-file-rotate-left" variant="outlined" @click="rotateVideo(-90)"> Rotate Left</v-btn>
           <v-btn prepend-icon="mdi-file-rotate-right" variant="outlined" @click="rotateVideo(+90)"> Rotate Right</v-btn>
@@ -160,6 +177,10 @@ import { storeToRefs } from 'pinia'
 import { computed, onBeforeMount, onBeforeUnmount, ref, toRefs, watch } from 'vue'
 
 import ToggleButton from '../mini-widgets/ToggleFilter.vue';
+import { provide } from 'vue';
+const buttonState = ref(false);
+provide('isFilterOn', buttonState);
+
 // フィルタ状態を管理
 const isInvertFilterOn = ref(true);
 const invertRate = ref(100);

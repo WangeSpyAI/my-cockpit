@@ -26,6 +26,7 @@ export enum MiniWidgetType {
   Alerter = 'Alerter',
   ArmerButton = 'ArmerButton',
   ToggleFilter = 'ToggleFilter',
+  ToggleFilter2 = 'ToggleFilter2',
   BaseCommIndicator = 'BaseCommIndicator',
   BatteryIndicator = 'BatteryIndicator',
   ChangeAltitudeCommander = 'ChangeAltitudeCommander',
