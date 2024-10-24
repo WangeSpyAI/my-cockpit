@@ -163,6 +163,66 @@
           :max="100"
           thumb-label
         />
+        <v-switch
+          v-model="isSaturateFilterOn"
+          class="my-1"
+          label="Saturate"
+          :color="isSaturateFilterOn ? 'white' : undefined"
+          hide-details
+        />
+        <v-slider
+          v-model="saturateRate"
+          label="Saturate Rate"
+          color="white"
+          :min="0"
+          :max="1000"
+          thumb-label
+        />
+        <v-switch
+          v-model="isBrightnessFilterOn"
+          class="my-1"
+          label="Brightness"
+          :color="isBrightnessFilterOn ? 'white' : undefined"
+          hide-details
+        />
+        <v-slider
+          v-model="brightnessRate"
+          label="Brightness Rate"
+          color="white"
+          :min="0"
+          :max="1000"
+          thumb-label
+        />
+        <v-switch
+          v-model="isContrastFilterOn"
+          class="my-1"
+          label="Contrast"
+          :color="isContrastFilterOn ? 'white' : undefined"
+          hide-details
+        />
+        <v-slider
+          v-model="contrastRate"
+          label="Contrast Rate"
+          color="white"
+          :min="0"
+          :max="1000"
+          thumb-label
+        />
+        <v-switch
+          v-model="ishueRotateFilterOn"
+          class="my-1"
+          label="HueRotate"
+          :color="ishueRotateFilterOn ? 'white' : undefined"
+          hide-details
+        />
+        <v-slider
+          v-model="hueDeg"
+          label="Hue Deg"
+          color="white"
+          :min="0"
+          :max="360"
+          thumb-label
+        />
         <div class="flex-wrap justify-center d-flex ga-5">
           <v-btn prepend-icon="mdi-file-rotate-left" variant="outlined" @click="rotateVideo(-90)"> Rotate Left</v-btn>
           <v-btn prepend-icon="mdi-file-rotate-right" variant="outlined" @click="rotateVideo(+90)"> Rotate Right</v-btn>
@@ -188,6 +248,10 @@ const isSaturateFilterOn = ref(false);
 const saturateRate = ref(100);
 const isBrightnessFilterOn = ref(false);
 const brightnessRate = ref(100);
+const isContrastFilterOn = ref(false);
+const contrastRate = ref(100);
+const ishueRotateFilterOn = ref(false);
+const hueDeg = ref(0);
 
 
 // フィルタのオン・オフを切り替える関数
@@ -207,10 +271,16 @@ const combinedFilters = computed(() => {
     filters.push(`invert(${invertRate.value / 100})`);
   }
   if (isSaturateFilterOn.value) {
-    filters.push(`grayscale(${saturateRate.value / 100})`);
+    filters.push(`saturate(${saturateRate.value / 100})`);
   }
   if (isBrightnessFilterOn.value) {
-    filters.push(`sepia(${brightnessRate.value / 100})`);
+    filters.push(`brightness(${brightnessRate.value / 100})`);
+  }
+  if (isContrastFilterOn.value) {
+    filters.push(`contrast(${contrastRate.value / 100})`);
+  }
+  if (ishueRotateFilterOn.value) {
+    filters.push(`hue-rotate(${hueDeg.value}deg)`);
   }
 
   return filters.length ? filters.join(' ') : 'none'; // フィルタをスペースで区切って適用
