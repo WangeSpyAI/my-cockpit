@@ -45,58 +45,6 @@
     <video id="mainDisplayStream" ref="videoElement" muted autoplay playsinline disablePictureInPicture :style="{ filter: combinedFilters }" >
       Your browser does not support the video tag.
     </video>
-    <!-- <div style="display: flex;" class="relative flex items-center justify-end">
-      <div class="relative items-center justify-center w-auto p-1 rounded-md shadow-inner h-auto bg-slate-800/60">
-        <p>Invert</p>
-        <v-text-field
-            v-model.number="invertRate"
-            variant="filled"
-            placeholder="auto"
-            type="number"
-            class="uri-input"
-            theme="dark"
-            density="compact"
-            max="100"
-            min="0"
-            @input="invertRate"
-          />
-          <p>{{ buttonState }}</p>
-          <ToggleButton :isFilterOn="isInvertFilterOn" @toggle-filter="toggleInvertFilter" />
-          <ChildButton />
-      </div>
-      <div class="relative items-center justify-center w-auto p-1 rounded-md shadow-inner h-auto bg-slate-800/60">
-        <p>Saturate</p>
-        <v-text-field
-            v-model.number="saturateRate"
-            variant="filled"
-            placeholder="auto"
-            type="number"
-            class="uri-input"
-            theme="dark"
-            density="compact"
-            max="200"
-            min="0"
-            @input="saturateRate"
-          />
-          <ToggleButton :isFilterOn="isSaturateFilterOn" @toggle-filter="toggleSaturateFilter" />
-      </div>
-      <div class="relative items-center justify-center w-auto p-1 rounded-md shadow-inner h-auto bg-slate-800/60">
-        <p>Brightness</p>
-        <v-text-field
-            v-model.number="brightnessRate"
-            variant="filled"
-            placeholder="auto"
-            type="number"
-            class="uri-input"
-            theme="dark"
-            density="compact"
-            max="200"
-            min="0"
-            @input="brightnessRate"
-          />
-          <ToggleButton :isFilterOn="isBrightnessFilterOn" @toggle-filter="toggleBrightnessFilter" />
-      </div>
-    </div> -->
   </div>
   <v-dialog v-model="widgetStore.widgetManagerVars(widget.hash).configMenuOpen" width="auto">
     <v-card class="pa-4 text-white" style="border-radius: 15px" :style="interfaceStore.globalGlassMenuStyles">
@@ -149,79 +97,84 @@
           hide-details
         />
         <v-switch
-          v-model="isInvertFilterOn"
+          v-model="widget.options.isInvertFilterOn"
           class="my-1"
           label="Invert"
-          :color="isInvertFilterOn ? 'white' : undefined"
+          :color="widget.options.isInvertFilterOn ? 'white' : undefined"
           hide-details
         />
         <v-slider
-          v-model="invertRate"
+          v-model="widget.options.invertRate"
           label="Invert Rate"
           color="white"
           :min="0"
           :max="100"
           thumb-label
+          :step="1"
         />
         <v-switch
-          v-model="isSaturateFilterOn"
+          v-model="widget.options.isSaturateFilterOn"
           class="my-1"
           label="Saturate"
-          :color="isSaturateFilterOn ? 'white' : undefined"
+          :color="widget.options.isSaturateFilterOn ? 'white' : undefined"
           hide-details
         />
         <v-slider
-          v-model="saturateRate"
+          v-model="widget.options.saturateRate"
           label="Saturate Rate"
           color="white"
           :min="0"
           :max="1000"
           thumb-label
+          :step="1"
         />
         <v-switch
-          v-model="isBrightnessFilterOn"
+          v-model="widget.options.isBrightnessFilterOn"
           class="my-1"
           label="Brightness"
-          :color="isBrightnessFilterOn ? 'white' : undefined"
+          :color="widget.options.isBrightnessFilterOn ? 'white' : undefined"
           hide-details
         />
         <v-slider
-          v-model="brightnessRate"
+          v-model="widget.options.brightnessRate"
           label="Brightness Rate"
           color="white"
           :min="0"
           :max="1000"
           thumb-label
+          :step="1"
         />
         <v-switch
-          v-model="isContrastFilterOn"
+          v-model="widget.options.isContrastFilterOn"
           class="my-1"
           label="Contrast"
-          :color="isContrastFilterOn ? 'white' : undefined"
+          :color="widget.options.isContrastFilterOn ? 'white' : undefined"
           hide-details
         />
         <v-slider
-          v-model="contrastRate"
+          v-model="widget.options.contrastRate"
           label="Contrast Rate"
           color="white"
           :min="0"
           :max="1000"
           thumb-label
+          :step="1"
         />
         <v-switch
-          v-model="ishueRotateFilterOn"
+          v-model="widget.options.ishueRotateFilterOn"
           class="my-1"
           label="HueRotate"
-          :color="ishueRotateFilterOn ? 'white' : undefined"
+          :color="widget.options.ishueRotateFilterOn ? 'white' : undefined"
           hide-details
         />
         <v-slider
-          v-model="hueDeg"
+          v-model="widget.options.hueDeg"
           label="Hue Deg"
           color="white"
           :min="0"
           :max="360"
           thumb-label
+          :step="1"
         />
         <div class="flex-wrap justify-center d-flex ga-5">
           <v-btn prepend-icon="mdi-file-rotate-left" variant="outlined" @click="rotateVideo(-90)"> Rotate Left</v-btn>
@@ -235,56 +188,6 @@
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
 import { computed, onBeforeMount, onBeforeUnmount, ref, toRefs, watch } from 'vue'
-
-import ToggleButton from '../mini-widgets/ToggleFilter.vue';
-import { provide } from 'vue';
-const buttonState = ref(false);
-provide('isFilterOn', buttonState);
-
-// フィルタ状態を管理
-const isInvertFilterOn = ref(true);
-const invertRate = ref(100);
-const isSaturateFilterOn = ref(false);
-const saturateRate = ref(100);
-const isBrightnessFilterOn = ref(false);
-const brightnessRate = ref(100);
-const isContrastFilterOn = ref(false);
-const contrastRate = ref(100);
-const ishueRotateFilterOn = ref(false);
-const hueDeg = ref(0);
-
-
-// フィルタのオン・オフを切り替える関数
-const toggleInvertFilter = () => {
-  isInvertFilterOn.value = !isInvertFilterOn.value;
-};
-const toggleSaturateFilter = () => {
-  isSaturateFilterOn.value = !isSaturateFilterOn.value;
-};
-const toggleBrightnessFilter = () => {
-  isBrightnessFilterOn.value = !isBrightnessFilterOn.value;
-};
-const combinedFilters = computed(() => {
-  let filters = [];
-
-  if (isInvertFilterOn.value) {
-    filters.push(`invert(${invertRate.value / 100})`);
-  }
-  if (isSaturateFilterOn.value) {
-    filters.push(`saturate(${saturateRate.value / 100})`);
-  }
-  if (isBrightnessFilterOn.value) {
-    filters.push(`brightness(${brightnessRate.value / 100})`);
-  }
-  if (isContrastFilterOn.value) {
-    filters.push(`contrast(${contrastRate.value / 100})`);
-  }
-  if (ishueRotateFilterOn.value) {
-    filters.push(`hue-rotate(${hueDeg.value}deg)`);
-  }
-
-  return filters.length ? filters.join(' ') : 'none'; // フィルタをスペースで区切って適用
-});
 
 import StatsForNerds from '@/components/VideoPlayerStatsForNerds.vue'
 import { isEqual } from '@/libs/utils'
@@ -323,10 +226,42 @@ onBeforeMount(() => {
     rotationAngle: 0,
     statsForNerds: false,
     internalStreamName: undefined as string | undefined,
+    isInvertFilterOn: true,
+    invertRate: 100,
+    isSaturateFilterOn: true,
+    saturateRate: 462,
+    isBrightnessFilterOn: false,
+    brightnessRate: 100,
+    isContrastFilterOn: false,
+    contrastRate: 100,
+    ishueRotateFilterOn: true,
+    hueDeg: 82
   }
   widget.value.options = Object.assign({}, defaultOptions, widget.value.options)
   nameSelectedStream.value = widget.value.options.internalStreamName
 })
+
+const combinedFilters = computed(() => {
+  let filters = [];
+
+  if (widget.value.options.isInvertFilterOn.value) {
+    filters.push(`invert(${widget.value.options.invertRate.value / 100})`);
+  }
+  if (widget.value.options.isSaturateFilterOn.value) {
+    filters.push(`saturate(${widget.value.options.saturateRate.value / 100})`);
+  }
+  if (widget.value.options.isBrightnessFilterOn.value) {
+    filters.push(`brightness(${widget.value.options.brightnessRate.value / 100})`);
+  }
+  if (widget.value.options.isContrastFilterOn.value) {
+    filters.push(`contrast(${widget.value.options.contrastRate.value / 100})`);
+  }
+  if (widget.value.options.ishueRotateFilterOn.value) {
+    filters.push(`hue-rotate(${widget.value.options.hueDeg.value}deg)`);
+  }
+
+  return filters.length ? filters.join(' ') : 'none'; // フィルタをスペースで区切って適用
+});
 
 const externalStreamId = computed(() => {
   return nameSelectedStream.value ? videoStore.externalStreamId(nameSelectedStream.value) : undefined
