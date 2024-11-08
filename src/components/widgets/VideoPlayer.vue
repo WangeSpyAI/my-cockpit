@@ -42,6 +42,10 @@
     <div v-else class="no-video-alert">
       <p>Loading stream...</p>
     </div>
+    <video id="videoElements" muted autoplay playsinline disablePictureInPicture loop :style="{ filter: combinedFilters }" >
+      Your browser does not support the video tag.
+      <source src="/home/j12968/blueos/my-cockpit/src/components/widgets/test.mp4" type="video/mp4">
+    </video>
     <video id="mainDisplayStream" ref="videoElement" muted autoplay playsinline disablePictureInPicture :style="{ filter: combinedFilters }" >
       Your browser does not support the video tag.
     </video>
@@ -244,20 +248,20 @@ onBeforeMount(() => {
 const combinedFilters = computed(() => {
   let filters = [];
 
-  if (widget.value.options.isInvertFilterOn.value) {
-    filters.push(`invert(${widget.value.options.invertRate.value / 100})`);
+  if (widget.value.options.isInvertFilterOn) {
+    filters.push(`invert(${widget.value.options.invertRate / 100})`);
   }
-  if (widget.value.options.isSaturateFilterOn.value) {
-    filters.push(`saturate(${widget.value.options.saturateRate.value / 100})`);
+  if (widget.value.options.isSaturateFilterOn) {
+    filters.push(`saturate(${widget.value.options.saturateRate / 100})`);
   }
-  if (widget.value.options.isBrightnessFilterOn.value) {
-    filters.push(`brightness(${widget.value.options.brightnessRate.value / 100})`);
+  if (widget.value.options.isBrightnessFilterOn) {
+    filters.push(`brightness(${widget.value.options.brightnessRate / 100})`);
   }
-  if (widget.value.options.isContrastFilterOn.value) {
-    filters.push(`contrast(${widget.value.options.contrastRate.value / 100})`);
+  if (widget.value.options.isContrastFilterOn) {
+    filters.push(`contrast(${widget.value.options.contrastRate / 100})`);
   }
-  if (widget.value.options.ishueRotateFilterOn.value) {
-    filters.push(`hue-rotate(${widget.value.options.hueDeg.value}deg)`);
+  if (widget.value.options.ishueRotateFilterOn) {
+    filters.push(`hue-rotate(${widget.value.options.hueDeg}deg)`);
   }
 
   return filters.length ? filters.join(' ') : 'none'; // フィルタをスペースで区切って適用
