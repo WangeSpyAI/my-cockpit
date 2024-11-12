@@ -43,8 +43,8 @@
       <p>Loading stream...</p>
     </div>
     <div>
-      <canvas ref="canvas"></canvas>
-      <video id="videoElements" muted autoplay playsinline disablePictureInPicture loop :style="{ filter: combinedFilters }" >
+      <canvas id="canvasElement" ref="canvas" v-show="widget.options.isBinarization"></canvas>
+      <video id="videoElements" muted autoplay playsinline disablePictureInPicture loop :style="{ filter: combinedFilters, zIndex: widget.options.isBinarization ? -1 : 0 }">
         Your browser does not support the video tag.
         <source src="/home/j12968/blueos/my-cockpit/src/components/widgets/test.mp4" type="video/mp4">
       </video>
@@ -183,6 +183,13 @@
           thumb-label
           :step="1"
         />
+        <v-switch
+          v-model="widget.options.isBinarization"
+          class="my-1"
+          label="Binarization"
+          :color="widget.options.isBinarization ? 'white' : undefined"
+          hide-details
+        />
         <div class="flex-wrap justify-center d-flex ga-5">
           <v-btn prepend-icon="mdi-file-rotate-left" variant="outlined" @click="rotateVideo(-90)"> Rotate Left</v-btn>
           <v-btn prepend-icon="mdi-file-rotate-right" variant="outlined" @click="rotateVideo(+90)"> Rotate Right</v-btn>
@@ -233,48 +240,21 @@ onBeforeMount(() => {
     rotationAngle: 0,
     statsForNerds: false,
     internalStreamName: undefined as string | undefined,
-    isInvertFilterOn: true,
+    isInvertFilterOn: false,
     invertRate: 100,
-    isSaturateFilterOn: true,
+    isSaturateFilterOn: false,
     saturateRate: 462,
     isBrightnessFilterOn: false,
     brightnessRate: 100,
     isContrastFilterOn: false,
     contrastRate: 100,
-    ishueRotateFilterOn: true,
-    hueDeg: 82
+    ishueRotateFilterOn: false,
+    hueDeg: 82,
+    isBinarizationFilterOn: false
   }
   widget.value.options = Object.assign({}, defaultOptions, widget.value.options)
   nameSelectedStream.value = widget.value.options.internalStreamName
 })
-
-import * as cv from "@techstark/opencv-js";
-const canvas = ref<HTMLCanvasElement | null>(null);
-
-onMounted(() => {
-  console.log("opencv loaded");
-  console.log(cv);
-
-  const video = document.getElementById('videoElements') as HTMLVideoElement;
-  const ctx = canvas.value?.getContext('2d');
-
-  video.addEventListener('play', () => {
-    setInterval(() => {
-      if (ctx) {
-        ctx.drawImage(video, 0, 0, canvas.value!.width, canvas.value!.height);
-        const imageData = ctx.getImageData(0, 0, canvas.value!.width, canvas.value!.height);
-        // 画像処理を行う
-        const pixels = imageData.data;
-        for (let i = 0; i < pixels.length; i += 4) {
-          pixels[i] = 255 - pixels[i]; // 赤色を反転
-          pixels[i + 1] = 255 - pixels[i + 1]; // 緑色を反転
-          pixels[i + 2] = 255 - pixels[i + 2]; // 青色を反転
-        }
-        ctx.putImageData(imageData, 0, 0);
-      }
-    }, 16); // 16msごとに処理を行う
-  });
-});
 
 const combinedFilters = computed(() => {
   let filters = [];
@@ -403,6 +383,72 @@ const streamStatus = computed(() => {
   }
   return videoStore.getStreamData(externalStreamId.value)?.webRtcManager.streamStatus ?? 'Unknown.'
 })
+
+// Binarization
+// import * as cv from "@techstark/opencv-js";
+import cv from "opencv-ts";
+
+const canvas = ref<HTMLCanvasElement | null>(null);
+
+onMounted(() => {
+  const video = document.getElementById("videoElements") as HTMLVideoElement;
+  const ctx = canvas.value?.getContext("2d");
+
+  video.addEventListener("play", () => {
+    const intervalId = setInterval(() => {
+      if (ctx && canvas.value) {
+        // 動画フレームをキャンバスに描画
+        ctx.drawImage(video, 0, 0, canvas.value.width, canvas.value.height);
+        console.log("Canvasにフレームを描画しました");
+
+        // キャンバスから画像データを取得
+        const imageData = ctx.getImageData(0, 0, canvas.value.width, canvas.value.height);
+        console.log("取得したImageData:", imageData);
+
+        // OpenCVのMatに変換
+        const src = cv.matFromImageData(imageData);  // 正しい変換方法
+        const gray = new cv.Mat();
+        const dst = new cv.Mat();
+        console.log("ImageDataをMat形式に変換しました");
+
+        // グレースケール変換
+        cv.cvtColor(src, gray, cv.COLOR_RGBA2GRAY);
+        console.log("グレースケール変換完了。Gray Mat:", gray);
+
+        // 大津の2値化を適用
+        cv.threshold(gray, dst, 0, 255, cv.THRESH_BINARY + cv.THRESH_OTSU);
+        console.log("大津の2値化を適用しました:", dst);
+
+        // 2値化されたデータをRGBA形式に変換
+        const outputData = new Uint8ClampedArray(dst.rows * dst.cols * 4);
+        for (let i = 0; i < dst.rows * dst.cols; i++) {
+          const pixelValue = dst.data[i];
+          outputData[i * 4] = pixelValue;       // R
+          outputData[i * 4 + 1] = pixelValue;   // G
+          outputData[i * 4 + 2] = pixelValue;   // B
+          outputData[i * 4 + 3] = 255;          // A (不透明)
+        }
+        console.log("RGBA形式に変換しました。OutputDataの長さ:", outputData.length);
+
+        // ImageDataに変換してキャンバスに描画
+        const outputImageData = new ImageData(outputData, dst.cols, dst.rows);
+        ctx.putImageData(outputImageData, 0, 0);
+        console.log("キャンバスに二値化画像を描画しました");
+
+        // メモリ解放
+        src.delete();
+        gray.delete();
+        dst.delete();
+        console.log("メモリを解放しました");
+      }
+    }, 1000); // 1秒ごとに処理を実行
+
+    // 動画が停止したときにインターバルをクリア
+    video.addEventListener("pause", () => clearInterval(intervalId));
+    video.addEventListener("ended", () => clearInterval(intervalId));
+  });
+});
+
 </script>
 
 <style scoped>
@@ -422,7 +468,7 @@ video {
   left: 0;
   object-fit: v-bind('widget.options.videoFitStyle');
   transform: v-bind('transformStyle');
-  z-index: -1;
+  /* z-index: -1; */
 }
 .no-video-alert {
   width: 100%;
