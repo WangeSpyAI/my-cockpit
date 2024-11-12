@@ -46,7 +46,7 @@
       <canvas id="canvasElement" ref="canvas" v-show="widget.options.isBinarization"></canvas>
       <video id="videoElements" muted autoplay playsinline disablePictureInPicture loop :style="{ filter: combinedFilters, zIndex: widget.options.isBinarization ? -1 : 0 }">
         Your browser does not support the video tag.
-        <source src="/home/j12968/blueos/my-cockpit/src/components/widgets/test.mp4" type="video/mp4">
+        <source src="/home/yanagi/workspace/blueos/my-cockpit/src/components/widgets/test.mp4" type="video/mp4">
       </video>
       <!-- <video id="mainDisplayStream" ref="videoElement" muted autoplay playsinline disablePictureInPicture :style="{ filter: combinedFilters }" >
         Your browser does not support the video tag.
@@ -190,6 +190,15 @@
           :color="widget.options.isBinarization ? 'white' : undefined"
           hide-details
         />
+        <v-slider
+          v-model="widget.options.framerate"
+          label="Framerate"
+          color="white"
+          :min="1"
+          :max="60"
+          thumb-label
+          :step="1"
+        />
         <div class="flex-wrap justify-center d-flex ga-5">
           <v-btn prepend-icon="mdi-file-rotate-left" variant="outlined" @click="rotateVideo(-90)"> Rotate Left</v-btn>
           <v-btn prepend-icon="mdi-file-rotate-right" variant="outlined" @click="rotateVideo(+90)"> Rotate Right</v-btn>
@@ -250,7 +259,8 @@ onBeforeMount(() => {
     contrastRate: 100,
     ishueRotateFilterOn: false,
     hueDeg: 82,
-    isBinarizationFilterOn: false
+    isBinarizationFilterOn: false,
+    framerate: 1
   }
   widget.value.options = Object.assign({}, defaultOptions, widget.value.options)
   nameSelectedStream.value = widget.value.options.internalStreamName
@@ -261,18 +271,23 @@ const combinedFilters = computed(() => {
 
   if (widget.value.options.isInvertFilterOn) {
     filters.push(`invert(${widget.value.options.invertRate / 100})`);
+    widget.value.options.isBinarization = false
   }
   if (widget.value.options.isSaturateFilterOn) {
     filters.push(`saturate(${widget.value.options.saturateRate / 100})`);
+    widget.value.options.isBinarization = false
   }
   if (widget.value.options.isBrightnessFilterOn) {
     filters.push(`brightness(${widget.value.options.brightnessRate / 100})`);
+    widget.value.options.isBinarization = false
   }
   if (widget.value.options.isContrastFilterOn) {
     filters.push(`contrast(${widget.value.options.contrastRate / 100})`);
+    widget.value.options.isBinarization = false
   }
   if (widget.value.options.ishueRotateFilterOn) {
     filters.push(`hue-rotate(${widget.value.options.hueDeg}deg)`);
+    widget.value.options.isBinarization = false
   }
 
   return filters.length ? filters.join(' ') : 'none'; // フィルタをスペースで区切って適用
@@ -385,7 +400,6 @@ const streamStatus = computed(() => {
 })
 
 // Binarization
-// import * as cv from "@techstark/opencv-js";
 import cv from "opencv-ts";
 
 const canvas = ref<HTMLCanvasElement | null>(null);
@@ -441,7 +455,7 @@ onMounted(() => {
         dst.delete();
         console.log("メモリを解放しました");
       }
-    }, 1000); // 1秒ごとに処理を実行
+    }, 1000/widget.value.options.framerate);
 
     // 動画が停止したときにインターバルをクリア
     video.addEventListener("pause", () => clearInterval(intervalId));
