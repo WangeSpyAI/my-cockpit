@@ -42,13 +42,16 @@
     <div v-else class="no-video-alert">
       <p>Loading stream...</p>
     </div>
-    <video id="videoElements" muted autoplay playsinline disablePictureInPicture loop :style="{ filter: combinedFilters }" >
-      Your browser does not support the video tag.
-      <source src="/home/j12968/blueos/my-cockpit/src/components/widgets/test.mp4" type="video/mp4">
-    </video>
-    <video id="mainDisplayStream" ref="videoElement" muted autoplay playsinline disablePictureInPicture :style="{ filter: combinedFilters }" >
-      Your browser does not support the video tag.
-    </video>
+    <div>
+      <canvas ref="canvas"></canvas>
+      <video id="videoElements" muted autoplay playsinline disablePictureInPicture loop :style="{ filter: combinedFilters }" >
+        Your browser does not support the video tag.
+        <source src="/home/j12968/blueos/my-cockpit/src/components/widgets/test.mp4" type="video/mp4">
+      </video>
+      <!-- <video id="mainDisplayStream" ref="videoElement" muted autoplay playsinline disablePictureInPicture :style="{ filter: combinedFilters }" >
+        Your browser does not support the video tag.
+      </video> -->
+    </div>
   </div>
   <v-dialog v-model="widgetStore.widgetManagerVars(widget.hash).configMenuOpen" width="auto">
     <v-card class="pa-4 text-white" style="border-radius: 15px" :style="interfaceStore.globalGlassMenuStyles">
@@ -191,7 +194,7 @@
 
 <script setup lang="ts">
 import { storeToRefs } from 'pinia'
-import { computed, onBeforeMount, onBeforeUnmount, ref, toRefs, watch } from 'vue'
+import { computed, onMounted, onBeforeMount, onBeforeUnmount, ref, toRefs, watch } from 'vue'
 
 import StatsForNerds from '@/components/VideoPlayerStatsForNerds.vue'
 import { isEqual } from '@/libs/utils'
@@ -244,6 +247,34 @@ onBeforeMount(() => {
   widget.value.options = Object.assign({}, defaultOptions, widget.value.options)
   nameSelectedStream.value = widget.value.options.internalStreamName
 })
+
+import * as cv from "@techstark/opencv-js";
+const canvas = ref<HTMLCanvasElement | null>(null);
+
+onMounted(() => {
+  console.log("opencv loaded");
+  console.log(cv);
+
+  const video = document.getElementById('videoElements') as HTMLVideoElement;
+  const ctx = canvas.value?.getContext('2d');
+
+  video.addEventListener('play', () => {
+    setInterval(() => {
+      if (ctx) {
+        ctx.drawImage(video, 0, 0, canvas.value!.width, canvas.value!.height);
+        const imageData = ctx.getImageData(0, 0, canvas.value!.width, canvas.value!.height);
+        // 画像処理を行う
+        const pixels = imageData.data;
+        for (let i = 0; i < pixels.length; i += 4) {
+          pixels[i] = 255 - pixels[i]; // 赤色を反転
+          pixels[i + 1] = 255 - pixels[i + 1]; // 緑色を反転
+          pixels[i + 2] = 255 - pixels[i + 2]; // 青色を反転
+        }
+        ctx.putImageData(imageData, 0, 0);
+      }
+    }, 16); // 16msごとに処理を行う
+  });
+});
 
 const combinedFilters = computed(() => {
   let filters = [];
@@ -391,6 +422,7 @@ video {
   left: 0;
   object-fit: v-bind('widget.options.videoFitStyle');
   transform: v-bind('transformStyle');
+  z-index: -1;
 }
 .no-video-alert {
   width: 100%;
@@ -404,5 +436,14 @@ video {
   padding: 3rem;
   color: white;
   border: 2px solid rgb(0, 20, 80);
+}
+canvas {
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+  object-fit: v-bind('widget.options.videoFitStyle');
+  transform: v-bind('transformStyle');
 }
 </style>
